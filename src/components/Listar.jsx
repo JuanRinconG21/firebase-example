@@ -27,12 +27,18 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { v4, v1 } from "uuid";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+//MUI
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
+import { LoadingButton } from "@mui/lab";
 
 const Listar = () => {
   const [tokenUser, setToken] = useState("");
   const [localToken, setlocalToken] = useState("");
   const MySwal = withReactContent(Swal);
   const [usuarios, setUsuarios] = useState([]);
+  //MUI
+  const [open, setOpen] = useState(false);
   const funcionValidar = () => {
     auth.onAuthStateChanged((user) => {
       if (user) {
@@ -52,12 +58,14 @@ const Listar = () => {
       console.log("No such document!");
     } */
     //TODOS LOS USUARIOS
+    setOpen(true);
     let Arreglodatos = [];
     const querySnapshot = await getDocs(collection(db, "personas"));
     querySnapshot.forEach((doc) => {
       Arreglodatos.push({ id: doc.id, ...doc.data() });
     });
     setUsuarios(Arreglodatos);
+    setOpen(false);
   };
   useEffect(() => {
     funcionValidar();
@@ -69,19 +77,16 @@ const Listar = () => {
   const [telefono, setTelefono] = useState("");
   const [avatar, setAvatar] = useState("");
   const [image, setImage] = useState(null);
-  const [color, setColor] = useState("");
+  //MUI
+  const [loading, setLoading] = useState(false);
 
   const handleCloseModal = () => setShowModal(false);
   const handleShowModal = () => setShowModal(true);
 
   const handleAddInformation = async () => {
+    setLoading(true);
     // const urlAvatar = guardarImagen(avatar);
-    if (
-      nombre.trim() === "" ||
-      telefono.trim() === "" ||
-      avatar === "" ||
-      color === ""
-    ) {
+    if (nombre.trim() === "" || telefono.trim() === "" || avatar === "") {
       MySwal.fire({
         title: "¡Error!",
         text: "No deje ningún campo vacío.",
@@ -95,7 +100,6 @@ const Listar = () => {
         nombre: nombre,
         telefono: telefono,
         image: URLimagen,
-        color: color,
       };
       const cityRef = doc(db, "personas", v4());
       const response = await setDoc(cityRef, datos);
@@ -105,11 +109,20 @@ const Listar = () => {
     setTelefono("");
     setAvatar("");
     setImage(null);
-    setColor("");
+
     const image = document.getElementById("avatar");
     image.value = "";
+    setLoading(false);
     // Cerrar la modal después de agregar la información
     handleCloseModal();
+    setOpen(true);
+    let Arreglodatos = [];
+    const querySnapshot = await getDocs(collection(db, "personas"));
+    querySnapshot.forEach((doc) => {
+      Arreglodatos.push({ id: doc.id, ...doc.data() });
+    });
+    setUsuarios(Arreglodatos);
+    setOpen(false);
   };
 
   const handleImageChange = (e) => {
@@ -128,6 +141,12 @@ const Listar = () => {
 
   return tokenUser === localToken ? (
     <>
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={open}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
       <h1
         style={{ textAlign: "center", color: "white" }}
         className="bg-dark p-3"
@@ -196,19 +215,6 @@ const Listar = () => {
                   <span></span>
                 )}
               </Form.Group>
-              <Form.Group controlId="formAvatar">
-                <Form.Label>Color de Fondo</Form.Label>
-                <input
-                  value={color}
-                  type="color"
-                  name=""
-                  className="form-control"
-                  id="color"
-                  onChange={(e) => {
-                    setColor(e.target.value);
-                  }}
-                />
-              </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
@@ -219,7 +225,6 @@ const Listar = () => {
                 setTelefono("");
                 setAvatar("");
                 setImage(null);
-                setColor("");
                 const image = document.getElementById("avatar");
                 image.value = "";
                 handleCloseModal();
@@ -227,9 +232,13 @@ const Listar = () => {
             >
               Cancelar
             </Button>
-            <Button variant="primary" onClick={handleAddInformation}>
+            <LoadingButton
+              variant="contained"
+              loading={loading}
+              onClick={handleAddInformation}
+            >
               Guardar
-            </Button>
+            </LoadingButton>
           </Modal.Footer>
         </Modal>
         <div className="row">
@@ -242,7 +251,6 @@ const Listar = () => {
                       style={{
                         width: "100%",
                         boxShadow: "0 4px 8px 0 rgba(0,0,0,0.2)",
-                        backgroundColor: dataUser.color,
                       }}
                     >
                       <Card.Body>
